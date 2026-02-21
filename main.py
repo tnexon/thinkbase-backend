@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import os
+import time
 from dotenv import load_dotenv
 from datetime import datetime
 from anthropic import Anthropic
@@ -31,10 +32,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize database on startup
+# Initialize database on startup with delay for Railway
 @app.on_event("startup")
 def startup_event():
+    """Initialize database on startup - wait for PostgreSQL to be ready"""
+    print("⏳ Waiting for PostgreSQL to be ready...")
+    time.sleep(5)  # Give PostgreSQL time to start up
+    print("🔄 Initializing database...")
     init_db()
+    print("✅ Application startup complete")
 
 # ==================== HEALTH CHECK ====================
 
