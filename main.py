@@ -607,3 +607,40 @@ async def ai_chat(request: dict):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"AI service error: {str(e)}"
         )
+# ==================== Debug ENDPOINTS ====================
+@app.get("/debug/database")
+def debug_database():
+    import os
+    db_url = os.getenv("DATABASE_URL", "NOT_SET")
+    
+    if db_url != "NOT_SET" and "@" in db_url:
+        parts = db_url.split("@")
+        safe_url = f"{parts[0].split('://')[0]}://***:***@{parts[1]}"
+    else:
+        safe_url = db_url
+    
+    return {
+        "DATABASE_URL_exists": db_url != "NOT_SET",
+        "DATABASE_URL_value": safe_url,
+        "starts_with_postgres": db_url.startswith("postgres://") if db_url != "NOT_SET" else False,
+        "starts_with_postgresql": db_url.startswith("postgresql://") if db_url != "NOT_SET" else False
+    }
+
+@app.get("/test/db-connect")
+def test_db_connect():
+    import psycopg2
+    import os
+    
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        return {"status": "error", "message": "DATABASE_URL not set"}
+    
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgres://", 1)
+    
+    try:
+        conn = psycopg2.connect(db_url)
+        conn.close()
+        return {"status": "success", "message": "Database connection successful!"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
